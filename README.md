@@ -34,7 +34,7 @@
 | **Search & filters** | By name, function, class, vendor or ID; filter by function group, state and risk level. |
 | **English / Russian** | Switch the interface language at any time. Light and dark theme follow the system. |
 | **Auto-revert** (v3) | Arm a disable with a timer: unless you confirm in time, Windows enables the device again by itself. The job lives in Task Scheduler, so it works even if the connection, the browser or this tool is gone. A button in the top bar switches between **with auto-revert** (default) and **no auto-revert** and explains both. |
-| **Remote-session aware** (v3) | SSH, RDP, WinRM and VNC sessions are detected, and so are remote-access tools. The adapter carrying your session, and everything it hangs off (PCIe port, USB hub), can be disabled only with auto-revert. |
+| **Remote-session aware** (v3) | SSH, RDP, WinRM and VNC sessions are detected, and so are remote-access tools. The adapter carrying your session, and everything it hangs off (PCIe port, USB hub), gets a red warning and a typed confirmation, and in the default mode an auto-revert timer. |
 | **Phone friendly** (v3) | On a touch screen a tap shows what hover would show, in a bottom sheet, including the red "goes down with it" subtree. |
 | **Audit log** | Every enable / disable and every auto-revert is written to a log, so you can always see what changed and undo it. |
 
@@ -59,7 +59,7 @@
 
 <table>
   <tr>
-    <td colspan="2"><img src="docs/screenshots/v3_mode.png" alt="Disable mode dialog"><br><sub><b>Disable mode.</b> The top-bar button opens this dialog: with auto-revert (every disable arms a timer) or without it (the device stays off until you enable it). The choice is remembered. A device that carries your remote session is always disabled with auto-revert, in either mode.</sub></td>
+    <td colspan="2"><img src="docs/screenshots/v3_mode.png" alt="Disable mode dialog"><br><sub><b>Disable mode.</b> The top-bar button opens this dialog: with auto-revert (every disable arms a timer) or without it (the device stays off until you enable it). The choice is remembered. The mode also applies to a device that carries your remote session; without auto-revert that needs a typed confirmation and a red warning.</sub></td>
   </tr>
   <tr>
     <td width="50%"><img src="docs/screenshots/v3_confirm.png" alt="Confirmation with mandatory auto-revert"><br><sub><b>Mandatory auto-revert.</b> The remote session comes in through this adapter, so "off" is not offered and the timer cannot be skipped.</sub></td>
@@ -115,7 +115,7 @@ The server only ever listens on `127.0.0.1`, so a phone or another PC reaches it
 
 Rules for remote work:
 
-- The adapter that carries your session, and everything above it, is locked unless you arm auto-revert. Leave it armed.
+- Keep the mode on **with auto-revert**. The adapter that carries your session, and everything above it, then comes back by itself if the link drops. In **no auto-revert** mode it is disabled for good, and only someone at the PC can bring it back.
 - Keep the PC from sleeping, or there is nothing to connect to.
 - Delete `token.txt` to rotate the token. Anyone who sees the link while the server runs can control the device.
 
@@ -148,7 +148,7 @@ flowchart LR
 
 Devices that Windows itself marks as non-disableable have the button blocked.
 
-If a remote session is detected, the server (not just the UI) refuses to disable the adapter carrying it, or any device above it in the tree, without an auto-revert of 15 to 900 seconds. If auto-revert cannot be armed (for example the Task Scheduler service is off), the device is **not** disabled.
+If a remote session is detected, the server (not just the UI) refuses to disable the adapter carrying it, or any device above it in the tree, unless the request either arms an auto-revert of 15 to 900 seconds or carries an explicit "no auto-revert" flag. The UI sends that flag only in the **no auto-revert** mode, after you type the confirmation word, and the log line is marked `NO-AUTO-REVERT`. If auto-revert is requested but cannot be armed (for example the Task Scheduler service is off), the device is **not** disabled.
 
 ## Getting a device back
 
@@ -178,7 +178,7 @@ docs/screenshots/            images used in this README
 
 | Version | Highlights |
 |---|---|
-| **v3** | Auto-revert through Task Scheduler, detection of SSH / RDP / WinRM / VNC sessions and remote-access tools, server-side lock on the adapter carrying your session, touch mode with a bottom sheet, `-RememberToken` for stable links. |
+| **v3** | Auto-revert through Task Scheduler with a with / without switch, detection of SSH / RDP / WinRM / VNC sessions and remote-access tools, server-side guard on the adapter carrying your session, touch mode with a bottom sheet, `-RememberToken` for stable links. |
 | **v2** | PC map with drill-down device tree, overview dashboard with live charts, detailed per-device explanations, functional grouping, correct audio endpoint switching, driver info, faster device tree via cfgmgr32. |
 | **v1** | Device list split into programmable / other, search and filters, enable / disable with confirmation and dependency check, EN / RU, audit log. |
 

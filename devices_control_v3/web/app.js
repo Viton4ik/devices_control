@@ -392,8 +392,8 @@ function openConfirm(d, action) {
   const draw = (impact, loading) => {
     if (my !== modalToken) return;
     const remoteDep = isDisable && ((d.reasons || []).some(isRemoteDep) || ((impact && impact.reasons) || []).some(isRemoteDep));
-    if (remoteDep && rbValue === 0) rbValue = S.rbSecs;   // forced in either mode
-    const showRb = isDisable && (S.rbMode === 'auto' || remoteDep);
+    const showRb = isDisable && S.rbMode === 'auto';
+    const unguarded = isDisable && !showRb && remoteDep;   // direct mode on a device that carries the remote session
     const warns = [...baseWarns];
     const extra = [];
     if (impact) {
@@ -413,7 +413,7 @@ function openConfirm(d, action) {
         ? `<div class="rb-pick"><label>${esc(t('rbLabel'))}: <select id="rb">${RB_OPTIONS.map(v =>
             `<option value="${v}"${v === rbValue ? ' selected' : ''}>${esc(t('rbOpt', v))}</option>`).join('')}</select></label>
             <div class="sub">${esc(t('rbHint'))}</div>${remoteDep ? `<div class="rb-need">${esc(t('rbRequired'))}</div>` : ''}</div>`
-        : `<div class="rb-pick direct"><div class="sub">${esc(t('modeInDialog', 'direct'))}</div></div>`;
+        : `<div class="rb-pick direct${unguarded ? ' danger' : ''}"><div class="sub">${esc(t('modeInDialog', 'direct'))}</div>${unguarded ? `<div class="rb-need">${esc(t('rbDirectRemote'))}</div>` : ''}</div>`;
       body += warns.length
         ? `<ul class="warns">${warns.map(w => `<li class="${w.crit ? 'crit' : ''}">${esc(reasonText(w.r))}</li>`).join('')}${extra.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`
         : (loading ? '' : `<p>${esc(t('noWarns'))}</p>`);
@@ -441,14 +441,13 @@ function openConfirm(d, action) {
       let allowed = !loading && !blocked;
       if (allowed && strong) allowed = ($('#typed')?.value || '').trim().toUpperCase() === t('word');
       if (allowed && needAck) allowed = !!$('#ack')?.checked;
-      if (allowed && remoteDep && rbValue < 15) allowed = false;
       ok.disabled = !allowed;
     };
     $('#rb')?.addEventListener('change', e => { rbValue = +e.target.value; S.rbSecs = rbValue; store.set('rbSecs', String(rbValue)); update(); });
     $('#typed')?.addEventListener('input', update);
     $('#ack')?.addEventListener('change', update);
     $('#mCancel').onclick = closeModal;
-    ok.onclick = () => doAction(d, action, strong, my, isDisable && showRb ? rbValue : 0);
+    ok.onclick = () => doAction(d, action, strong, my, isDisable && showRb ? rbValue : 0, unguarded);
     update();
     ($('#typed') || $('#mCancel')).focus();
   };
@@ -462,12 +461,12 @@ function openConfirm(d, action) {
   }
 }
 
-async function doAction(d, action, force, my, rollback = 0) {
+async function doAction(d, action, force, my, rollback = 0, directRemote = false) {
   const ok = $('#mOk');
   ok.disabled = true; $('#mCancel').disabled = true;
   ok.innerHTML = `<span class="spin"></span>${esc(t('working'))}`;
   try {
-    const res = await api('/api/set', { id: d.id, action, force, rollback });
+    const res = await api('/api/set', { id: d.id, action, force, rollback, directRemote });
     if (!res.ok) { toast(errText(res), 'err'); return; }
     if (res.device) replaceDevice(res.device);
     if (res.rollbackJob) { RB.add(res.rollbackJob); toast(t('rbArmed', d.name, rollback), 'warn'); }

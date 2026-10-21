@@ -321,3 +321,4 @@ body.sheet-open main { padding-bottom: 300px; }
 .mode-card .mc-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .mode-card .mc-text { font-size: 13px; color: var(--muted); }
 .rb-pick.direct { background: var(--warn-bg); border-color: var(--warn-line); }
+.rb-pick.direct.danger { background: var(--danger-bg); border-color: color-mix(in srgb, var(--danger) 40%, transparent); }

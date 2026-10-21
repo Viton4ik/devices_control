@@ -779,7 +779,7 @@ function Get-AudioEndpointInfo([string]$instanceId) {
 
 # ---------------------------------------------------------------- enable / disable
 
-function Set-DeviceState([string]$id, [string]$action, [bool]$force, [int]$rollback = 0) {
+function Set-DeviceState([string]$id, [string]$action, [bool]$force, [int]$rollback = 0, [bool]$directRemote = $false) {
     if (-not $script:IsAdmin) { return @{ ok = $false; error = 'notAdmin' } }
     if (-not $script:DeviceIndex.Count) { [void](Get-DeviceList) }   # e.g. the server was restarted while a page stayed open
     $rec = $script:DeviceIndex[$id]
@@ -791,12 +791,18 @@ function Set-DeviceState([string]$id, [string]$action, [bool]$force, [int]$rollb
     $ep = $null
     if ($rec.cls -eq 'AudioEndpoint' -and $script:Native) { $ep = Get-EndpointId $id }
 
-    # A device that carries (or sits under) the remote session may only be disabled with
-    # auto-revert armed: if the link drops, nobody is there to press Enable.
+    # A device that carries (or sits under) the remote session is disabled without auto-revert
+    # only when the caller says so explicitly (directRemote): if the link drops, nobody is
+    # there to press Enable. The UI sends the flag only in "no auto-revert" mode, after the
+    # user typed the confirmation word.
     $job = $null
+    $unguardedRemote = $false
     if (-not $enable) {
         if ($rollback -ne 0 -and ($rollback -lt 15 -or $rollback -gt 900)) { return @{ ok = $false; error = 'badRollback' } }
-        if ($rollback -lt 15 -and (Test-RemoteDependency $id)) { return @{ ok = $false; error = 'rollbackRequired' } }
+        if ($rollback -lt 15 -and (Test-RemoteDependency $id)) {
+            if (-not $directRemote) { return @{ ok = $false; error = 'rollbackRequired' } }
+            $unguardedRemote = $true
+        }
         if ($rollback -ge 15) {
             try { $job = Start-RollbackJob $rec $rollback $(if ($ep) { $ep } else { '' }) }
             catch { return @{ ok = $false; error = 'rollbackUnavailable'; message = $_.Exception.Message } }
@@ -846,6 +852,7 @@ function Set-DeviceState([string]$id, [string]$action, [bool]$force, [int]$rollb
     $suffix = ''
     if ($audio) { $suffix = ' audioState={0} default=[{1}]' -f $audio.state, $audio.defaultName }
     if ($job) { $suffix += ' auto-revert-in={0}s' -f $rollback }
+    if ($unguardedRemote) { $suffix += ' NO-AUTO-REVERT (device carries the remote session)' }
     Write-ActionLog ("{0}  [{1}]  {2}  -> state={3} code={4}{5}" -f $action.ToUpper(), $rec.name, $id, $new.state, $new.code, $suffix)
     $script:History.Add([ordered]@{ t = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss'); action = $action; name = $rec.name; id = $id; ok = $true; state = $new.state })
     return @{ ok = $true; device = $new; needsRestart = $needsRestart; audio = $audio; pnpWarning = $pnpError; rollbackJob = $job }
@@ -1046,7 +1053,7 @@ function Invoke-Request($ctx) {
         '/api/set' {
             $action = [string]$body.action
             if ($action -notin 'enable', 'disable') { $res = @{ ok = $false; error = 'badAction' } }
-            else { $res = Set-DeviceState ([string]$body.id) $action ([bool]$body.force) ([int]$body.rollback) }
+            else { $res = Set-DeviceState ([string]$body.id) $action ([bool]$body.force) ([int]$body.rollback) ([bool]$body.directRemote) }
         }
         '/api/rollbacks' { $res = @{ ok = $true; now = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds(); jobs = @(Get-RollbackJobs) } }
         '/api/rollback/confirm' { $res = Stop-RollbackJob ([string]$body.job) }
