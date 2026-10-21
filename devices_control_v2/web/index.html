@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Devices Control</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="top">
+  <div class="bar">
+    <h1 data-i="title"></h1>
+    <span class="host" id="host"></span>
+    <span class="spacer"></span>
+    <button class="btn" id="refresh" data-i="refresh"></button>
+    <div class="lang" role="group" aria-label="Language"><button data-lang="ru">RU</button><button data-lang="en">EN</button></div>
+    <button class="btn danger" id="stop" data-i="stop"></button>
+  </div>
+  <div class="bar tabs-bar">
+    <nav class="tabs" role="tablist">
+      <button class="tab" data-tab="dash"><span data-i="tabDash"></span></button>
+      <button class="tab" data-tab="map"><span data-i="tabMap"></span></button>
+      <button class="tab" data-tab="prog"><span data-i="tabProg"></span><span class="n" id="nProg"></span></button>
+      <button class="tab" data-tab="other"><span data-i="tabOther"></span><span class="n" id="nOther"></span></button>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <div id="notices"></div>
+
+  <section id="view-dash" class="view" hidden></section>
+  <section id="view-map" class="view" hidden></section>
+
+  <section id="view-list" class="view" hidden>
+    <div class="filters">
+      <input type="search" id="q">
+      <select id="fGroup"></select>
+      <select id="fState"></select>
+      <select id="fRisk"></select>
+      <label class="chk"><input type="checkbox" id="fDisc"><span data-i="showDisc"></span></label>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div id="list"><div class="loading"><span class="spin"></span><span data-i="loading"></span></div></div>
+  </section>
+</main>
+
+<aside class="drawer" id="drawer" aria-hidden="true">
+  <div class="drawer-head">
+    <span class="drawer-crumb" id="drawerCrumb"></span>
+    <button class="btn icon" id="drawerClose" aria-label="Close">✕</button>
+  </div>
+  <div class="drawer-body" id="drawerBody"></div>
+</aside>
+
+<div class="modal-bg" id="modalBg"><div class="modal" id="modal" role="dialog" aria-modal="true"></div></div>
+<div class="tooltip" id="tooltip" role="tooltip"></div>
+<div class="toasts" id="toasts"></div>
+
+<script src="i18n.js"></script>
+<script src="knowledge.js"></script>
+<script src="app.js"></script>
+<script src="map.js"></script>
+<script src="dashboard.js"></script>
+<script src="main.js"></script>
+</body>
+</html>

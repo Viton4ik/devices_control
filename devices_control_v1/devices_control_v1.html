@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Devices Control</title>
+<style>
+:root {
+  --bg: #f4f5f7; --panel: #ffffff; --text: #1d2330; --muted: #5d6677; --line: #dde1e8;
+  --accent: #2f6fde; --ok: #1f8a4c; --ok-bg: #e3f4ea; --off: #6b7280; --off-bg: #eceef1;
+  --err: #c2410c; --err-bg: #fdeee5; --disc: #8a8f99; --disc-bg: #f1f2f4;
+  --danger: #c62828; --danger-bg: #fdecec; --warn: #9a6a00; --warn-bg: #fff6dc;
+  --r1: #b58100; --r2: #d1531f; --r3: #c62828;
+  --shadow: 0 1px 2px rgba(20,30,50,.06), 0 2px 8px rgba(20,30,50,.05);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14171c; --panel: #1d2128; --text: #e6e9ee; --muted: #9aa3b2; --line: #2e343e;
+    --accent: #6b9cff; --ok: #4fc483; --ok-bg: #173826; --off: #a3a9b4; --off-bg: #2a2f37;
+    --err: #ff9a5c; --err-bg: #3a2418; --disc: #8a909b; --disc-bg: #23272e;
+    --danger: #ff6b6b; --danger-bg: #3a1c1c; --warn: #f2c14e; --warn-bg: #33290f;
+    --r1: #f2c14e; --r2: #ff8c52; --r3: #ff6b6b;
+    --shadow: none;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 "Segoe UI", system-ui, sans-serif; }
+button, input, select { font: inherit; color: inherit; }
+header.top { position: sticky; top: 0; z-index: 5; background: var(--panel); border-bottom: 1px solid var(--line); }
+.bar { max-width: 1400px; margin: 0 auto; padding: 10px 16px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.bar h1 { font-size: 17px; margin: 0 12px 0 0; font-weight: 600; }
+.host { color: var(--muted); font-size: 13px; }
+.spacer { flex: 1; }
+.btn { border: 1px solid var(--line); background: var(--panel); border-radius: 7px; padding: 6px 12px; cursor: pointer; }
+.btn:hover:not(:disabled) { border-color: var(--accent); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.danger { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, var(--line)); }
+.btn.danger.solid { background: var(--danger); color: #fff; border-color: var(--danger); }
+.btn.success { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 45%, var(--line)); }
+.btn.success.solid { background: var(--ok); color: #fff; border-color: var(--ok); }
+.lang { display: inline-flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; }
+.lang button { border: 0; background: transparent; padding: 6px 10px; cursor: pointer; }
+.lang button.on { background: var(--accent); color: #fff; }
+.tabs { display: flex; gap: 4px; }
+.tab { border: 0; background: transparent; padding: 10px 14px; cursor: pointer; border-bottom: 2px solid transparent; color: var(--muted); font-weight: 600; }
+.tab.on { color: var(--text); border-bottom-color: var(--accent); }
+.tab .n { font-weight: 400; color: var(--muted); margin-left: 4px; }
+main { max-width: 1400px; margin: 0 auto; padding: 14px 16px 60px; }
+.notice { border-radius: 8px; padding: 10px 14px; margin-bottom: 10px; border: 1px solid; }
+.notice.warn { background: var(--warn-bg); border-color: color-mix(in srgb, var(--warn) 35%, transparent); }
+.notice.danger { background: var(--danger-bg); border-color: color-mix(in srgb, var(--danger) 35%, transparent); }
+.notice b { display: block; margin-bottom: 2px; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 12px 0; }
+.filters input[type=search] { flex: 1 1 280px; min-width: 0; padding: 7px 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel); }
+.filters select { padding: 7px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel); max-width: 100%; }
+.chk { display: inline-flex; gap: 6px; align-items: center; color: var(--muted); }
+.stats { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
+.group h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 18px 0 8px; font-weight: 600; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 10px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 9px; padding: 12px 14px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.card.risk1 { border-left-color: var(--r1); }
+.card.risk2 { border-left-color: var(--r2); }
+.card.risk3 { border-left-color: var(--r3); }
+.card .head { display: flex; gap: 8px; align-items: flex-start; }
+.card h3 { font-size: 15px; margin: 0; flex: 1; font-weight: 600; overflow-wrap: break-word; min-width: 0; }
+.badge { font-size: 12px; padding: 2px 8px; border-radius: 99px; white-space: nowrap; font-weight: 600; }
+.st-ok { color: var(--ok); background: var(--ok-bg); }
+.st-disabled { color: var(--off); background: var(--off-bg); }
+.st-error { color: var(--err); background: var(--err-bg); }
+.st-disconnected { color: var(--disc); background: var(--disc-bg); }
+dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; font-size: 13px; }
+dt { color: var(--muted); }
+dd { margin: 0; overflow-wrap: anywhere; }
+code { font: 12px/1.4 Consolas, "Cascadia Mono", monospace; }
+details summary { cursor: pointer; color: var(--accent); font-size: 12px; }
+.expl { margin: 0; font-size: 13px; color: var(--muted); }
+.risk { font-size: 13px; }
+.risk .lvl { font-weight: 600; }
+.risk ul { margin: 4px 0 0; padding-left: 18px; }
+.rl1 { color: var(--r1); } .rl2 { color: var(--r2); } .rl3 { color: var(--r3); }
+.card .foot { display: flex; gap: 8px; align-items: center; margin-top: auto; }
+.card .foot .hint { font-size: 12px; color: var(--muted); flex: 1; }
+.empty, .loading { text-align: center; color: var(--muted); padding: 50px 0; }
+.modal-bg { position: fixed; inset: 0; background: rgba(10,14,20,.55); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 20; }
+.modal-bg.on { display: flex; }
+.modal { background: var(--panel); border-radius: 12px; max-width: 580px; width: 100%; max-height: 90vh; overflow: auto; padding: 18px 20px; border: 1px solid var(--line); }
+.modal h2 { margin: 0 0 6px; font-size: 18px; }
+.modal .dev { font-weight: 600; overflow-wrap: anywhere; }
+.modal .sub { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+.modal ul.warns { padding-left: 18px; margin: 10px 0; }
+.modal ul.warns li { margin-bottom: 6px; }
+.modal ul.warns li.crit { color: var(--danger); font-weight: 600; }
+.modal .typed { margin-top: 10px; }
+.modal .typed input { width: 100%; padding: 7px 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--bg); margin-top: 4px; }
+.modal .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; }
+.spin { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: s .8s linear infinite; vertical-align: -2px; margin-right: 6px; }
+@keyframes s { to { transform: rotate(360deg); } }
+.toasts { position: fixed; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 30; max-width: calc(100vw - 32px); }
+.toast { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 8px; padding: 10px 14px; box-shadow: 0 4px 16px rgba(0,0,0,.15); max-width: 420px; overflow-wrap: anywhere; }
+.toast.ok { border-left-color: var(--ok); } .toast.err { border-left-color: var(--danger); } .toast.warn { border-left-color: var(--warn); }
+.stopped { max-width: 520px; margin: 80px auto; text-align: center; }
+@media (max-width: 520px) { .grid { grid-template-columns: 1fr; } .bar h1 { font-size: 15px; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="bar">
+    <h1 data-i="title"></h1>
+    <span class="host" id="host"></span>
+    <span class="spacer"></span>
+    <button class="btn" id="refresh" data-i="refresh"></button>
+    <div class="lang"><button data-lang="ru">RU</button><button data-lang="en">EN</button></div>
+    <button class="btn danger" id="stop" data-i="stop"></button>
+  </div>
+  <div class="bar" style="padding-top:0;padding-bottom:0">
+    <nav class="tabs">
+      <button class="tab" data-tab="prog"><span data-i="tabProg"></span><span class="n" id="nProg"></span></button>
+      <button class="tab" data-tab="other"><span data-i="tabOther"></span><span class="n" id="nOther"></span></button>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <div id="notices"></div>
+  <div class="filters">
+    <input type="search" id="q">
+    <select id="fClass"></select>
+    <select id="fState"></select>
+    <select id="fRisk"></select>
+    <label class="chk"><input type="checkbox" id="fDisc"><span data-i="showDisc"></span></label>
+  </div>
+  <div class="stats" id="stats"></div>
+  <div id="list"><div class="loading"><span class="spin"></span><span data-i="loading"></span></div></div>
+</main>
+
+<div class="modal-bg" id="modalBg"><div class="modal" id="modal" role="dialog" aria-modal="true"></div></div>
+<div class="toasts" id="toasts"></div>
+
+<script>
+'use strict';
+
+const I18N = {
+  ru: {
+    title: 'Устройства ПК', refresh: 'Обновить', stop: 'Остановить сервер', loading: 'Загрузка списка устройств…',
+    tabProg: 'Управляемые программно', tabOther: 'Остальные устройства',
+    search: 'Поиск: имя, класс, производитель, аппаратный ID…',
+    allClasses: 'Все классы', allStates: 'Все состояния', allRisks: 'Любой риск',
+    showDisc: 'Показывать неподключённые',
+    st_ok: 'Работает', st_disabled: 'Отключено', st_error: 'Ошибка', st_disconnected: 'Не подключено',
+    risk0: 'Низкий риск', risk1: 'Средний риск', risk2: 'Высокий риск', risk3: 'Критичное устройство',
+    cls: 'Класс', mfr: 'Производитель', hwid: 'Аппаратный ID', inst: 'ID экземпляра', service: 'Драйвер/служба', status: 'Состояние', code: 'код',
+    more: n => `ещё ${n}`, noClass: '(без класса)', unknown: '—',
+    enable: 'Включить', disable: 'Выключить',
+    hintDisc: 'Устройство не подключено - управлять нечем.',
+    hintReadOnly: 'Нет прав администратора.',
+    shown: (n, total) => `Показано ${n} из ${total}`, nDisabled: n => `отключено: ${n}`, nError: n => `с ошибкой: ${n}`,
+    empty: 'Ничего не найдено. Измените поиск или фильтры.',
+    noticeTitle: 'Изменения применяются к реальному оборудованию сразу.',
+    noticeText: 'Отключение сетевого адаптера может прервать интернет, USB-контроллера или HID-устройства - работу клавиатуры и мыши, контроллера дисков - работу Windows. Класс устройства НЕ гарантирует безопасность: перед отключением инструмент проверяет, какие устройства от него зависят. Все действия записываются в devices_control_v1.log рядом со скриптом.',
+    noAdminTitle: 'Режим только для чтения.',
+    noAdminText: 'Сервер запущен без прав администратора - Windows не позволит включать и отключать устройства. Перезапустите и подтвердите запрос UAC.',
+    rdpTitle: 'Вы подключены через удалённый рабочий стол.',
+    rdpText: 'Отключение сетевого адаптера оборвёт этот сеанс, и вернуть его удалённо будет невозможно.',
+    confirmDisable: 'Отключить устройство?', confirmEnable: 'Включить устройство?',
+    checking: 'Проверяю зависимые устройства…',
+    noWarns: 'Явных рисков не найдено. Это не гарантия: проверка опирается на данные Windows.',
+    enableNote: 'Windows загрузит драйвер устройства. Если устройство было отключено намеренно (например, мешающий драйвер), проблема вернётся.',
+    descendants: n => `Зависимых устройств в дереве: ${n}.`,
+    ack: 'Я понимаю последствия и знаю, как вернуть устройство (Диспетчер устройств или этот инструмент).',
+    typeWord: w => `Для подтверждения введите: ${w}`, word: 'ОТКЛЮЧИТЬ',
+    cancel: 'Отмена', doDisable: 'Отключить', doEnable: 'Включить', working: 'Выполняется…',
+    cantDisable: 'Windows не разрешает отключать это устройство - кнопка заблокирована.',
+    okDisabled: n => `Отключено: ${n}`, okEnabled: n => `Включено: ${n}`,
+    restart: 'Состояние не изменилось сразу - вероятно, нужна перезагрузка.',
+    err: 'Ошибка', errToken: 'Нет доступа: откройте страницу по ссылке из окна сервера.',
+    errNet: 'Сервер недоступен. Возможно, окно PowerShell закрыто.',
+    e_notAdmin: 'Нет прав администратора.', e_unknownDevice: 'Устройство не найдено - обновите список.',
+    e_forceRequired: 'Критичное устройство: нужно явное подтверждение.', e_osError: 'Windows отказала: ',
+    stopConfirm: 'Остановить локальный сервер? Страница перестанет работать.', stopped: 'Сервер остановлен. Окно можно закрыть.',
+    ch_input: 'Устройства ввода', ch_storage: 'Диски/хранилище', ch_net: 'Сетевые адаптеры', ch_display: 'Видео',
+  },
+  en: {
+    title: 'PC Devices', refresh: 'Refresh', stop: 'Stop server', loading: 'Loading device list…',
+    tabProg: 'Programmable', tabOther: 'Other devices',
+    search: 'Search: name, class, manufacturer, hardware ID…',
+    allClasses: 'All classes', allStates: 'All states', allRisks: 'Any risk',
+    showDisc: 'Show disconnected',
+    st_ok: 'Working', st_disabled: 'Disabled', st_error: 'Error', st_disconnected: 'Not connected',
+    risk0: 'Low risk', risk1: 'Medium risk', risk2: 'High risk', risk3: 'Critical device',
+    cls: 'Class', mfr: 'Manufacturer', hwid: 'Hardware ID', inst: 'Instance ID', service: 'Driver/service', status: 'State', code: 'code',
+    more: n => `${n} more`, noClass: '(no class)', unknown: '—',
+    enable: 'Enable', disable: 'Disable',
+    hintDisc: 'Device is not connected - nothing to control.',
+    hintReadOnly: 'No administrator rights.',
+    shown: (n, total) => `Showing ${n} of ${total}`, nDisabled: n => `disabled: ${n}`, nError: n => `with errors: ${n}`,
+    empty: 'Nothing found. Change the search or filters.',
+    noticeTitle: 'Changes are applied to real hardware immediately.',
+    noticeText: 'Disabling a network adapter can cut your internet; a USB controller or HID device - your keyboard and mouse; a disk controller - Windows itself. A device class is NOT a safety guarantee: before disabling, the tool checks which devices depend on it. Every action is written to devices_control_v1.log next to the script.',
+    noAdminTitle: 'Read-only mode.',
+    noAdminText: 'The server runs without administrator rights, so Windows will not allow enabling or disabling devices. Restart it and accept the UAC prompt.',
+    rdpTitle: 'You are connected via Remote Desktop.',
+    rdpText: 'Disabling a network adapter will drop this session and you will not be able to restore it remotely.',
+    confirmDisable: 'Disable this device?', confirmEnable: 'Enable this device?',
+    checking: 'Checking dependent devices…',
+    noWarns: 'No obvious risks found. This is not a guarantee: the check relies on what Windows reports.',
+    enableNote: 'Windows will load the device driver. If the device was disabled on purpose (e.g. a misbehaving driver), the problem will come back.',
+    descendants: n => `Dependent devices in the tree: ${n}.`,
+    ack: 'I understand the consequences and know how to bring the device back (Device Manager or this tool).',
+    typeWord: w => `To confirm, type: ${w}`, word: 'DISABLE',
+    cancel: 'Cancel', doDisable: 'Disable', doEnable: 'Enable', working: 'Working…',
+    cantDisable: 'Windows does not allow disabling this device - the button is blocked.',
+    okDisabled: n => `Disabled: ${n}`, okEnabled: n => `Enabled: ${n}`,
+    restart: 'The state did not change right away - a restart is probably required.',
+    err: 'Error', errToken: 'Access denied: open the page using the link from the server window.',
+    errNet: 'Server is unreachable. The PowerShell window may have been closed.',
+    e_notAdmin: 'No administrator rights.', e_unknownDevice: 'Device not found - refresh the list.',
+    e_forceRequired: 'Critical device: explicit confirmation required.', e_osError: 'Windows refused: ',
+    stopConfirm: 'Stop the local server? This page will stop working.', stopped: 'Server stopped. You can close this window.',
+    ch_input: 'Input devices', ch_storage: 'Disks/storage', ch_net: 'Network adapters', ch_display: 'Display',
+  }
+};
+
+// Risk reasons: base ones come with the device list, the rest from the impact check.
+const REASONS = {
+  core:          { ru: 'Ядро системы (шины, ACPI, процессор, прошивка): возможны зависание, BSOD или незагрузка Windows.', en: 'Core system device (buses, ACPI, CPU, firmware): may cause a hang, BSOD or an unbootable Windows.', crit: true },
+  storage:       { ru: 'Хранилище: если здесь системный диск или данные, Windows может упасть или не загрузиться.', en: 'Storage: if the system disk or your data is here, Windows can crash or fail to boot.', crit: true },
+  tpm:           { ru: 'TPM: BitLocker может потребовать ключ восстановления, Windows Hello перестанет работать.', en: 'TPM: BitLocker may ask for the recovery key, Windows Hello will stop working.', crit: true },
+  display:       { ru: 'Видеоадаптер: изображение может пропасть или переключиться на базовый драйвер.', en: 'Display adapter: the picture may disappear or fall back to the basic driver.' },
+  input:         { ru: 'Клавиатура/мышь: можно потерять управление компьютером.', en: 'Keyboard/mouse: you may lose control of the computer.' },
+  usbController: { ru: 'USB-контроллер: отключит ВСЕ устройства на его портах, включая клавиатуру и мышь.', en: 'USB controller: disables EVERY device on its ports, including keyboard and mouse.' },
+  usbHub:        { ru: 'USB-концентратор: отключит все устройства, подключённые через него.', en: 'USB hub: disables every device connected through it.' },
+  usbDevice:     { ru: 'USB-устройство: убедитесь, что это не клавиатура, мышь или диск.', en: 'USB device: make sure it is not a keyboard, mouse or disk.' },
+  netActive:     { ru: 'Адаптер сейчас подключён: соединение (и, вероятно, интернет) прервётся.', en: 'The adapter is connected now: the connection (and likely internet) will drop.' },
+  net:           { ru: 'Сетевой адаптер: от него могут зависеть VPN, виртуальные машины, общий доступ.', en: 'Network adapter: VPN, virtual machines or sharing may depend on it.' },
+  rdp:           { ru: 'Вы в RDP-сеансе через этот адаптер: сеанс оборвётся без возможности вернуться удалённо.', en: 'You are in an RDP session over this adapter: it will drop with no way back remotely.', crit: true },
+  hid:           { ru: 'HID-устройство может быть частью клавиатуры, мыши, тачпада или сенсорного экрана.', en: 'A HID device may be part of a keyboard, mouse, touchpad or touch screen.' },
+  bluetooth:     { ru: 'Bluetooth: отключатся беспроводные клавиатуры, мыши и наушники.', en: 'Bluetooth: wireless keyboards, mice and headsets will disconnect.' },
+  software:      { ru: 'Программное устройство: от него могут зависеть драйверы и службы.', en: 'Software device: drivers and services may depend on it.' },
+  battery:       { ru: 'Питание: пропадут индикация заряда и управление питанием.', en: 'Power: battery level and power management will stop working.' },
+  unknownClass:  { ru: 'Класс устройства не определён - назначение неизвестно.', en: 'The device class is not set - its purpose is unknown.' },
+  defaultRoute:  { ru: 'Через этот адаптер идёт маршрут по умолчанию - интернет пропадёт.', en: 'The default route goes through this adapter - internet will be lost.', crit: true },
+  childInput:    { ru: 'От устройства зависят клавиатура/мышь - вы можете потерять управление.', en: 'A keyboard/mouse depends on this device - you may lose control.', crit: true },
+  childStorage:  { ru: 'От устройства зависят диски.', en: 'Disks depend on this device.', crit: true },
+  childNet:      { ru: 'От устройства зависят сетевые адаптеры.', en: 'Network adapters depend on this device.' },
+  childDisplay:  { ru: 'От устройства зависит видеоадаптер.', en: 'A display adapter depends on this device.' },
+  notDisableable:{ ru: 'Windows сообщает, что это устройство отключить нельзя.', en: 'Windows reports that this device cannot be disabled.', crit: true },
+};
+
+const CLASSES = {
+  Ports:            ['COM- и LPT-порты. Доступ через serial API (pySerial, System.IO.Ports, CreateFile).', 'Serial (COM) and parallel (LPT) ports. Accessible via serial APIs (pySerial, System.IO.Ports, CreateFile).'],
+  MultiPortSerial:  ['Многопортовые последовательные адаптеры.', 'Multi-port serial adapters.'],
+  Modem:            ['Модемы; управляются AT-командами через COM-порт.', 'Modems; controlled with AT commands over a COM port.'],
+  USB:              ['USB-контроллеры, концентраторы и составные USB-устройства. Отключение контроллера или хаба отключает всё, что к нему подключено.', 'USB host controllers, hubs and composite devices. Disabling a controller or hub disables everything attached to it.'],
+  USBDevice:        ['USB-устройства без отдельного класса; доступ через WinUSB/libusb.', 'USB devices without a dedicated class; accessible via WinUSB/libusb.'],
+  Net:              ['Сетевые адаптеры: Ethernet, Wi-Fi, виртуальные и VPN. Управление через сокеты, netsh, WMI.', 'Network adapters: Ethernet, Wi-Fi, virtual and VPN. Controlled via sockets, netsh, WMI.'],
+  AudioEndpoint:    ['Аудиоточки: динамики, наушники, микрофоны (WASAPI / Core Audio).', 'Audio endpoints: speakers, headphones, microphones (WASAPI / Core Audio).'],
+  MEDIA:            ['Звуковые, видео- и игровые контроллеры, MIDI.', 'Sound, video and game controllers, MIDI.'],
+  HIDClass:         ['HID-устройства: геймпады, кнопки, датчики; доступ через HID API. Часто являются родителями клавиатуры и мыши.', 'HID devices: gamepads, buttons, sensors; accessible via the HID API. Often parents of keyboards and mice.'],
+  Keyboard:         ['Клавиатуры.', 'Keyboards.'],
+  Mouse:            ['Мыши, тачпады и другие указывающие устройства.', 'Mice, touchpads and other pointing devices.'],
+  Camera:           ['Камеры (Media Foundation, DirectShow).', 'Cameras (Media Foundation, DirectShow).'],
+  Image:            ['Камеры и сканеры (WIA, DirectShow).', 'Cameras and scanners (WIA, DirectShow).'],
+  Bluetooth:        ['Bluetooth-радиомодули и подключённые устройства/сервисы.', 'Bluetooth radios and paired devices/services.'],
+  Printer:          ['Принтеры.', 'Printers.'],
+  PrintQueue:       ['Очереди печати.', 'Print queues.'],
+  WPD:              ['Портативные устройства (телефоны, плееры) через MTP/WPD.', 'Portable devices (phones, players) via MTP/WPD.'],
+  Biometric:        ['Биометрия: сканеры отпечатков и лица (Windows Hello).', 'Biometrics: fingerprint and face sensors (Windows Hello).'],
+  SmartCardReader:  ['Считыватели смарт-карт (PC/SC).', 'Smart card readers (PC/SC).'],
+  SmartCard:        ['Смарт-карты.', 'Smart cards.'],
+  Sensor:           ['Датчики: акселерометр, освещённость, ориентация (Sensor API).', 'Sensors: accelerometer, light, orientation (Sensor API).'],
+  Infrared:         ['Инфракрасные устройства.', 'Infrared devices.'],
+  Multifunction:    ['Многофункциональные адаптеры.', 'Multifunction adapters.'],
+  '1394':           ['Контроллеры FireWire (IEEE 1394).', 'FireWire (IEEE 1394) controllers.'],
+  AndroidUsbDeviceClass: ['Android-устройства (ADB-интерфейс).', 'Android devices (ADB interface).'],
+  Display:          ['Видеоадаптеры. Отключение переводит на базовый драйвер или гасит экран.', 'Display adapters. Disabling falls back to the basic driver or blanks the screen.'],
+  Monitor:          ['Мониторы.', 'Monitors.'],
+  System:           ['Системные устройства: шины PCI, ACPI, таймеры, контроллеры прерываний. Основа работы ПК.', 'System devices: PCI buses, ACPI, timers, interrupt controllers. The foundation of the PC.'],
+  Computer:         ['Тип компьютера (HAL).', 'Computer type (HAL).'],
+  Processor:        ['Ядра процессора.', 'Processor cores.'],
+  DiskDrive:        ['Физические диски.', 'Physical disks.'],
+  Volume:           ['Тома (разделы дисков).', 'Volumes (disk partitions).'],
+  VolumeSnapshot:   ['Теневые копии томов.', 'Volume shadow copies.'],
+  HDC:              ['Контроллеры IDE/SATA/AHCI.', 'IDE/SATA/AHCI controllers.'],
+  SCSIAdapter:      ['Контроллеры хранения: NVMe, RAID, SCSI, Storage Spaces.', 'Storage controllers: NVMe, RAID, SCSI, Storage Spaces.'],
+  SDHost:           ['Контроллеры SD-карт (иногда на них стоит системный eMMC).', 'SD card host controllers (sometimes host the system eMMC).'],
+  SecurityDevices:  ['Модуль TPM.', 'TPM module.'],
+  Firmware:         ['Прошивка системы (UEFI).', 'System firmware (UEFI).'],
+  SoftwareDevice:   ['Программные устройства, созданные Windows или драйверами.', 'Software devices created by Windows or drivers.'],
+  SoftwareComponent:['Программные компоненты драйверов.', 'Driver software components.'],
+  Extension:        ['Расширения драйверов (INF extension).', 'Driver extensions (INF extension).'],
+  Battery:          ['Батарея и адаптер питания (ACPI).', 'Battery and AC adapter (ACPI).'],
+  AudioProcessingObject: ['Программные аудиоэффекты (APO).', 'Audio processing objects (APO).'],
+  LegacyDriver:     ['Устаревшие драйверы, не являющиеся Plug and Play.', 'Legacy non-Plug-and-Play drivers.'],
+};
+const CLASS_FALLBACK = ['Класс не описан в этом инструменте. Не отключайте, если не понимаете назначение устройства.', 'This class is not described by the tool. Do not disable it unless you understand what the device does.'];
+
+const PROBLEMS = {
+  1: ['устройство настроено неверно', 'not configured correctly'], 3: ['драйвер повреждён', 'driver may be corrupted'],
+  10: ['не удаётся запустить', 'cannot start'], 12: ['нехватка ресурсов', 'not enough resources'],
+  14: ['нужна перезагрузка', 'restart required'], 18: ['переустановите драйвер', 'reinstall drivers'],
+  19: ['повреждён реестр', 'registry corrupted'], 21: ['Windows удаляет устройство', 'Windows is removing the device'],
+  24: ['отсутствует или не все драйверы', 'not present or not all drivers installed'], 28: ['драйвер не установлен', 'driver not installed'],
+  31: ['ошибка драйвера', 'driver error'], 39: ['драйвер не загружен', 'driver could not be loaded'],
+  43: ['устройство сообщило о сбое', 'device reported a problem'], 45: ['устройство не подключено', 'device not connected'],
+  52: ['подпись драйвера не проверена', 'driver signature cannot be verified'],
+};
+
+// ------------------------------------------------------------------ state
+
+const store = {
+  get(k) { try { return localStorage.getItem('dc_' + k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem('dc_' + k, v); } catch {} },
+};
+const S = {
+  lang: store.get('lang') === 'en' ? 'en' : 'ru',
+  tab: store.get('tab') === 'other' ? 'other' : 'prog',
+  devices: [], byId: new Map(),
+  q: '', cls: '', state: '', risk: '', showDisc: store.get('disc') === '1',
+  admin: true, rdp: false, computer: '', stopped: false,
+};
+
+const TOKEN = (() => {
+  const fromUrl = new URLSearchParams(location.search).get('t');
+  if (fromUrl) {
+    try { sessionStorage.setItem('dc_token', fromUrl); } catch {}
+    history.replaceState(null, '', '/');
+    return fromUrl;
+  }
+  try { return sessionStorage.getItem('dc_token'); } catch { return null; }
+})();
+
+const $ = s => document.querySelector(s);
+const t = (k, ...a) => { const v = I18N[S.lang][k]; return typeof v === 'function' ? v(...a) : (v ?? k); };
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const li = () => S.lang === 'ru' ? 0 : 1;
+const classText = c => (CLASSES[c] || CLASS_FALLBACK)[li()];
+const reasonText = r => (REASONS[r] ? REASONS[r][S.lang] : r);
+
+async function api(path, body) {
+  let r;
+  try {
+    r = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN || '' }, body: JSON.stringify(body || {}) });
+  } catch { throw new Error(t('errNet')); }
+  if (r.status === 403) throw new Error(t('errToken'));
+  const j = await r.json().catch(() => ({ ok: false, error: 'server', message: 'HTTP ' + r.status }));
+  return j;
+}
+
+function errText(res) {
+  const k = 'e_' + res.error;
+  const base = I18N[S.lang][k] ? t(k) : (t('err') + ': ');
+  return base + (res.message || (I18N[S.lang][k] ? '' : res.error || ''));
+}
+
+function toast(msg, kind = '') {
+  const el = document.createElement('div');
+  el.className = 'toast ' + kind;
+  el.textContent = msg;
+  $('#toasts').appendChild(el);
+  setTimeout(() => el.remove(), kind === 'err' ? 9000 : 5000);
+}
+
+// ------------------------------------------------------------------ data
+
+async function load() {
+  $('#refresh').disabled = true;
+  try {
+    const res = await api('/api/devices');
+    if (!res.ok) throw new Error(errText(res));
+    S.devices = res.devices || [];
+    S.byId = new Map(S.devices.map(d => [d.id, d]));
+    S.admin = !!res.admin; S.rdp = !!res.rdp; S.computer = res.computer || '';
+    render();
+  } catch (e) {
+    $('#list').innerHTML = `<div class="empty">${esc(e.message)}</div>`;
+  } finally {
+    $('#refresh').disabled = false;
+  }
+}
+
+function inTab(d) { return (S.tab === 'prog') === !!d.prog; }
+function visibleByDisc(d) { return S.showDisc || d.state !== 'disconnected' || S.state === 'disconnected'; }
+
+function filtered() {
+  const q = S.q.trim().toLowerCase();
+  return S.devices.filter(d => inTab(d) && visibleByDisc(d)
+    && (!S.cls || d.cls === S.cls)
+    && (!S.state || d.state === S.state)
+    && (S.risk === '' || d.risk === +S.risk)
+    && (!q || [d.name, d.cls, d.mfr, d.id, d.service, ...(d.hwids || []), classText(d.cls)].join(' ').toLowerCase().includes(q)));
+}
+
+// ------------------------------------------------------------------ render
+
+function applyStatic() {
+  document.documentElement.lang = S.lang;
+  document.title = t('title');
+  document.querySelectorAll('[data-i]').forEach(el => { el.textContent = t(el.dataset.i); });
+  document.querySelectorAll('[data-lang]').forEach(b => b.classList.toggle('on', b.dataset.lang === S.lang));
+  document.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === S.tab));
+  $('#q').placeholder = t('search');
+  $('#fDisc').checked = S.showDisc;
+}
+
+function renderNotices() {
+  let h = `<div class="notice warn"><b>${esc(t('noticeTitle'))}</b>${esc(t('noticeText'))}</div>`;
+  if (!S.admin) h = `<div class="notice danger"><b>${esc(t('noAdminTitle'))}</b>${esc(t('noAdminText'))}</div>` + h;
+  if (S.rdp) h = `<div class="notice danger"><b>${esc(t('rdpTitle'))}</b>${esc(t('rdpText'))}</div>` + h;
+  $('#notices').innerHTML = h;
+}
+
+function renderFilters() {
+  const pool = S.devices.filter(d => inTab(d) && visibleByDisc(d));
+  const classes = [...new Set(pool.map(d => d.cls))].sort((a, b) => a.localeCompare(b));
+  if (S.cls && !classes.includes(S.cls)) S.cls = '';
+  $('#fClass').innerHTML = `<option value="">${esc(t('allClasses'))}</option>` +
+    classes.map(c => `<option value="${esc(c)}"${c === S.cls ? ' selected' : ''}>${esc(c || t('noClass'))} (${pool.filter(d => d.cls === c).length})</option>`).join('');
+  $('#fState').innerHTML = `<option value="">${esc(t('allStates'))}</option>` +
+    ['ok', 'disabled', 'error', 'disconnected'].map(s => `<option value="${s}"${s === S.state ? ' selected' : ''}>${esc(t('st_' + s))}</option>`).join('');
+  $('#fRisk').innerHTML = `<option value="">${esc(t('allRisks'))}</option>` +
+    [0, 1, 2, 3].map(r => `<option value="${r}"${String(r) === S.risk ? ' selected' : ''}>${esc(t('risk' + r))}</option>`).join('');
+}
+
+function stateBadge(d) {
+  let txt = t('st_' + d.state);
+  if (d.state === 'error' && d.code) {
+    const p = PROBLEMS[d.code];
+    txt += ` (${t('code')} ${d.code}${p ? ': ' + p[li()] : ''})`;
+  }
+  return `<span class="badge st-${d.state}">${esc(txt)}</span>`;
+}
+
+function card(d) {
+  const hw = d.hwids || [];
+  const hwHtml = hw.length
+    ? `<code>${esc(hw[0])}</code>${hw.length > 1 ? `<details><summary>${esc(t('more', hw.length - 1))}</summary>${hw.slice(1).map(h => `<div><code>${esc(h)}</code></div>`).join('')}</details>` : ''}`
+    : esc(t('unknown'));
+  const reasons = (d.reasons || []).map(r => `<li>${esc(reasonText(r))}</li>`).join('');
+  const riskHtml = d.risk > 0
+    ? `<div class="risk"><span class="lvl rl${d.risk}">${esc(t('risk' + d.risk))}</span>${reasons ? `<ul>${reasons}</ul>` : ''}</div>`
+    : `<div class="risk" style="color:var(--muted)">${esc(t('risk0'))}</div>`;
+
+  let btn, hint = '';
+  const canAct = S.admin && !S.stopped;
+  if (d.state === 'disabled') {
+    btn = `<button class="btn success" data-act="enable" data-id="${esc(d.id)}"${canAct ? '' : ' disabled'}>${esc(t('enable'))}</button>`;
+  } else if (d.state === 'disconnected') {
+    btn = `<button class="btn" disabled>${esc(t('disable'))}</button>`; hint = t('hintDisc');
+  } else {
+    btn = `<button class="btn danger" data-act="disable" data-id="${esc(d.id)}"${canAct ? '' : ' disabled'}>${esc(t('disable'))}</button>`;
+  }
+  if (!S.admin && !hint) hint = t('hintReadOnly');
+
+  return `<article class="card risk${d.risk}">
+    <div class="head"><h3>${esc(d.name)}</h3>${stateBadge(d)}</div>
+    <dl>
+      <dt>${esc(t('cls'))}</dt><dd>${esc(d.cls || t('noClass'))}</dd>
+      <dt>${esc(t('mfr'))}</dt><dd>${esc(d.mfr || t('unknown'))}</dd>
+      <dt>${esc(t('hwid'))}</dt><dd>${hwHtml}</dd>
+      <dt>${esc(t('inst'))}</dt><dd><code>${esc(d.id)}</code></dd>
+      ${d.service ? `<dt>${esc(t('service'))}</dt><dd>${esc(d.service)}</dd>` : ''}
+    </dl>
+    <p class="expl">${esc(classText(d.cls))}</p>
+    ${riskHtml}
+    <div class="foot"><span class="hint">${esc(hint)}</span>${btn}</div>
+  </article>`;
+}
+
+function render() {
+  if (S.stopped) return;
+  applyStatic();
+  renderNotices();
+  renderFilters();
+  $('#host').textContent = S.computer;
+  const count = tab => S.devices.filter(d => ((tab === 'prog') === !!d.prog) && (S.showDisc || d.state !== 'disconnected')).length;
+  $('#nProg').textContent = count('prog');
+  $('#nOther').textContent = count('other');
+
+  const list = filtered();
+  const pool = S.devices.filter(d => inTab(d) && visibleByDisc(d));
+  $('#stats').textContent = [t('shown', list.length, pool.length),
+    t('nDisabled', list.filter(d => d.state === 'disabled').length),
+    t('nError', list.filter(d => d.state === 'error').length)].join(' · ');
+
+  if (!list.length) { $('#list').innerHTML = `<div class="empty">${esc(t('empty'))}</div>`; return; }
+
+  const groups = new Map();
+  for (const d of list) {
+    if (!groups.has(d.cls)) groups.set(d.cls, []);
+    groups.get(d.cls).push(d);
+  }
+  const keys = [...groups.keys()].sort((a, b) => a.localeCompare(b));
+  $('#list').innerHTML = keys.map(k => {
+    const items = groups.get(k).sort((a, b) => a.name.localeCompare(b.name));
+    return `<section class="group"><h2>${esc(k || t('noClass'))} · ${items.length}</h2><div class="grid">${items.map(card).join('')}</div></section>`;
+  }).join('');
+}
+
+// ------------------------------------------------------------------ confirm dialog
+
+let modalToken = 0;
+
+function closeModal() { modalToken++; $('#modalBg').classList.remove('on'); }
+
+function openConfirm(d, action) {
+  const my = ++modalToken;
+  const m = $('#modal');
+  const isDisable = action === 'disable';
+  const baseWarns = (d.reasons || []).map(r => ({ r, crit: !!(REASONS[r] && REASONS[r].crit) }));
+  const needTyped0 = isDisable && d.risk >= 3;
+
+  const draw = (impact, loading) => {
+    if (my !== modalToken) return;
+    const warns = [...baseWarns];
+    const extra = [];
+    if (impact) {
+      for (const r of impact.reasons || []) if (!warns.some(w => w.r === r)) warns.push({ r, crit: !!(REASONS[r] && REASONS[r].crit) });
+      for (const g of ['input', 'storage', 'net', 'display']) {
+        const names = (impact.children && impact.children[g]) || [];
+        if (names.length) extra.push(`${t('ch_' + g)}: ${names.join(', ')}`);
+      }
+    }
+    const blocked = isDisable && impact && (impact.reasons || []).includes('notDisableable');
+    const strong = isDisable && (needTyped0 || warns.some(w => w.crit));
+    const needAck = isDisable && !strong && d.risk >= 1;
+
+    let body = '';
+    if (isDisable) {
+      body += warns.length
+        ? `<ul class="warns">${warns.map(w => `<li class="${w.crit ? 'crit' : ''}">${esc(reasonText(w.r))}</li>`).join('')}${extra.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`
+        : (loading ? '' : `<p>${esc(t('noWarns'))}</p>`);
+      if (loading) body += `<p><span class="spin"></span>${esc(t('checking'))}</p>`;
+      else if (impact && impact.descendants) body += `<p class="sub">${esc(t('descendants', impact.descendants))}</p>`;
+      if (blocked) body += `<p style="color:var(--danger);font-weight:600">${esc(t('cantDisable'))}</p>`;
+      if (!loading && !blocked && strong) body += `<div class="typed"><label>${esc(t('typeWord', t('word')))}<input id="typed" autocomplete="off"></label></div>`;
+      if (!loading && !blocked && needAck) body += `<label class="chk" style="margin-top:10px;align-items:flex-start"><input type="checkbox" id="ack"><span>${esc(t('ack'))}</span></label>`;
+    } else {
+      body += `<p>${esc(t('enableNote'))}</p>`;
+    }
+
+    m.innerHTML = `
+      <h2>${esc(t(isDisable ? 'confirmDisable' : 'confirmEnable'))}</h2>
+      <div class="dev">${esc(d.name)}</div>
+      <div class="sub">${esc(d.cls || t('noClass'))} · ${esc(d.id)}</div>
+      ${body}
+      <div class="actions">
+        <button class="btn" id="mCancel">${esc(t('cancel'))}</button>
+        <button class="btn ${isDisable ? 'danger' : 'success'} solid" id="mOk" disabled>${esc(t(isDisable ? 'doDisable' : 'doEnable'))}</button>
+      </div>`;
+
+    const ok = $('#mOk');
+    const update = () => {
+      let allowed = !loading && !blocked;
+      if (allowed && strong) allowed = ($('#typed')?.value || '').trim().toUpperCase() === t('word');
+      if (allowed && needAck) allowed = !!$('#ack')?.checked;
+      ok.disabled = !allowed;
+    };
+    $('#typed')?.addEventListener('input', update);
+    $('#ack')?.addEventListener('change', update);
+    $('#mCancel').onclick = closeModal;
+    ok.onclick = () => doAction(d, action, strong, my);
+    update();
+    ($('#typed') || $('#mCancel')).focus();
+  };
+
+  $('#modalBg').classList.add('on');
+  draw(null, isDisable);
+  if (isDisable) {
+    api('/api/impact', { id: d.id })
+      .then(res => draw(res.ok ? res : null, false))
+      .catch(e => { toast(e.message, 'err'); draw(null, false); });
+  }
+}
+
+async function doAction(d, action, force, my) {
+  const ok = $('#mOk');
+  ok.disabled = true; $('#mCancel').disabled = true;
+  ok.innerHTML = `<span class="spin"></span>${esc(t('working'))}`;
+  try {
+    const res = await api('/api/set', { id: d.id, action, force });
+    if (!res.ok) { toast(errText(res), 'err'); return; }
+    const nd = res.device;
+    const i = S.devices.findIndex(x => x.id === d.id);
+    if (i >= 0 && nd) { S.devices[i] = nd; S.byId.set(nd.id, nd); }
+    toast(t(action === 'disable' ? 'okDisabled' : 'okEnabled', d.name), 'ok');
+    if (res.needsRestart) toast(t('restart'), 'warn');
+    render();
+  } catch (e) {
+    toast(e.message, 'err');
+  } finally {
+    if (my === modalToken) closeModal();
+  }
+}
+
+// ------------------------------------------------------------------ events
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]');
+  if (b && !b.disabled) { const d = S.byId.get(b.dataset.id); if (d) openConfirm(d, b.dataset.act); return; }
+  const tab = e.target.closest('[data-tab]');
+  if (tab) { S.tab = tab.dataset.tab; S.cls = ''; store.set('tab', S.tab); render(); return; }
+  const lang = e.target.closest('[data-lang]');
+  if (lang) { S.lang = lang.dataset.lang; store.set('lang', S.lang); render(); if ($('#modalBg').classList.contains('on')) closeModal(); }
+});
+$('#modalBg').addEventListener('click', e => { if (e.target.id === 'modalBg' && !$('#mCancel')?.disabled) closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#modalBg').classList.contains('on') && !$('#mCancel')?.disabled) closeModal(); });
+$('#q').addEventListener('input', e => { S.q = e.target.value; render(); });
+$('#fClass').addEventListener('change', e => { S.cls = e.target.value; render(); });
+$('#fState').addEventListener('change', e => { S.state = e.target.value; render(); });
+$('#fRisk').addEventListener('change', e => { S.risk = e.target.value; render(); });
+$('#fDisc').addEventListener('change', e => { S.showDisc = e.target.checked; store.set('disc', S.showDisc ? '1' : '0'); render(); });
+$('#refresh').addEventListener('click', load);
+$('#stop').addEventListener('click', async () => {
+  if (!confirm(t('stopConfirm'))) return;
+  try { await api('/api/shutdown'); } catch {}
+  S.stopped = true;
+  document.querySelector('header.top').remove();
+  $('#main').innerHTML = `<div class="stopped"><h2>${esc(t('stopped'))}</h2></div>`;
+});
+
+applyStatic();
+load();
+</script>
+</body>
+</html>
