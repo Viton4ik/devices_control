@@ -309,3 +309,15 @@ body.sheet-open main { padding-bottom: 300px; }
 .map-svg, .tree-svg, .zone, .node { -webkit-tap-highlight-color: transparent; }
 @media (max-width: 520px) { .tree-wrap { max-height: 56vh; } .notice.remote { font-size: 13px; } }
 .map-wrap { scroll-margin-top: 150px; }
+
+/* v3: disable mode */
+.btn.mode { font-weight: 600; }
+.btn.mode.on { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 45%, var(--line)); }
+.btn.mode.off { color: var(--warn); border-color: var(--warn-line); background: var(--warn-bg); }
+.mode-cards { display: grid; gap: 10px; margin: 12px 0; }
+.mode-card { display: flex; gap: 10px; align-items: flex-start; border: 1px solid var(--line); border-radius: 10px; padding: 12px; cursor: pointer; }
+.mode-card.on { border-color: var(--accent); background: var(--accent-soft); }
+.mode-card input { margin-top: 4px; }
+.mode-card .mc-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.mode-card .mc-text { font-size: 13px; color: var(--muted); }
+.rb-pick.direct { background: var(--warn-bg); border-color: var(--warn-line); }

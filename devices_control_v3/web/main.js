@@ -13,6 +13,7 @@ document.addEventListener('click', e => {
     if (tab.dataset.tab === 'map' && S.tab === 'map') MAP.reset();   // second click returns to the PC picture
     S.tab = tab.dataset.tab; S.group = ''; store.set('tab', S.tab); hideTip(); renderAll(); return;
   }
+  if (e.target.closest('#modeBtn')) { openModeDialog(); return; }
   const lang = e.target.closest('[data-lang]');
   if (lang) { S.lang = lang.dataset.lang; store.set('lang', S.lang); if ($('#modalBg').classList.contains('on')) closeModal(); renderAll(); return; }
   if (e.target.closest('[data-notice]')) { S.noticeOpen = !S.noticeOpen; store.set('noticeOpen', S.noticeOpen ? '1' : '0'); renderNotices(); }

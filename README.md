@@ -33,7 +33,7 @@
 | **Audio done right** | Speakers / microphones are switched through the Windows audio policy (the same call the Sound control panel makes), and the UI tells you where Windows routed the sound. |
 | **Search & filters** | By name, function, class, vendor or ID; filter by function group, state and risk level. |
 | **English / Russian** | Switch the interface language at any time. Light and dark theme follow the system. |
-| **Auto-revert** (v3) | Arm a disable with a timer: unless you confirm in time, Windows enables the device again by itself. The job lives in Task Scheduler, so it works even if the connection, the browser or this tool is gone. |
+| **Auto-revert** (v3) | Arm a disable with a timer: unless you confirm in time, Windows enables the device again by itself. The job lives in Task Scheduler, so it works even if the connection, the browser or this tool is gone. A button in the top bar switches between **with auto-revert** (default) and **no auto-revert** and explains both. |
 | **Remote-session aware** (v3) | SSH, RDP, WinRM and VNC sessions are detected, and so are remote-access tools. The adapter carrying your session, and everything it hangs off (PCIe port, USB hub), can be disabled only with auto-revert. |
 | **Phone friendly** (v3) | On a touch screen a tap shows what hover would show, in a bottom sheet, including the red "goes down with it" subtree. |
 | **Audit log** | Every enable / disable and every auto-revert is written to a log, so you can always see what changed and undo it. |
@@ -58,6 +58,9 @@
 ### Remote work (v3)
 
 <table>
+  <tr>
+    <td colspan="2"><img src="docs/screenshots/v3_mode.png" alt="Disable mode dialog"><br><sub><b>Disable mode.</b> The top-bar button opens this dialog: with auto-revert (every disable arms a timer) or without it (the device stays off until you enable it). The choice is remembered. A device that carries your remote session is always disabled with auto-revert, in either mode.</sub></td>
+  </tr>
   <tr>
     <td width="50%"><img src="docs/screenshots/v3_confirm.png" alt="Confirmation with mandatory auto-revert"><br><sub><b>Mandatory auto-revert.</b> The remote session comes in through this adapter, so "off" is not offered and the timer cannot be skipped.</sub></td>
     <td width="50%"><img src="docs/screenshots/v3_countdown.png" alt="Countdown bar"><br><sub><b>Countdown.</b> The yellow bar stays on every tab. <i>Keep disabled</i> cancels the revert, <i>Revert now</i> does it immediately.</sub></td>

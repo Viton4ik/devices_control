@@ -15,6 +15,8 @@ const S = {
   noticeOpen: store.get('noticeOpen') !== '0',
   admin: true, rdp: false, native: true, computer: '', stopped: false, loaded: false,
   remote: { active: false, kinds: [], tools: [], links: [] },
+  rbMode: store.get('rbMode') === 'direct' ? 'direct' : 'auto',
+  rbSecs: [30, 60, 120, 300, 900].includes(+store.get('rbSecs')) ? +store.get('rbSecs') : 120,
   drawerId: null,
 };
 
@@ -147,6 +149,11 @@ function applyStatic() {
   });
   $('#q').placeholder = t('search');
   $('#fDisc').checked = S.showDisc;
+  const mb = $('#modeBtn');
+  mb.textContent = t(S.rbMode === 'auto' ? 'modeAuto' : 'modeDirect');
+  mb.title = t('modeBtnTip');
+  mb.classList.toggle('on', S.rbMode === 'auto');
+  mb.classList.toggle('off', S.rbMode !== 'auto');
   $('#host').textContent = S.computer;
 }
 
@@ -379,13 +386,14 @@ function openConfirm(d, action) {
   const baseWarns = (d.reasons || []).map(r => ({ r, crit: !!(REASONS[r] && REASONS[r].crit) }));
   const needTyped0 = isDisable && d.risk >= 3;
   const isRemoteDep = r => r === 'remoteLink' || r === 'childRemoteLink';
-  const RB_OPTIONS = [0, 30, 60, 120, 300, 900];
-  let rbValue = isDisable && (d.risk >= 2 || S.remote.active) ? 120 : 0;
+  const RB_OPTIONS = [30, 60, 120, 300, 900];
+  let rbValue = isDisable && S.rbMode === 'auto' ? S.rbSecs : 0;
 
   const draw = (impact, loading) => {
     if (my !== modalToken) return;
     const remoteDep = isDisable && ((d.reasons || []).some(isRemoteDep) || ((impact && impact.reasons) || []).some(isRemoteDep));
-    if (remoteDep && rbValue === 0) rbValue = 120;
+    if (remoteDep && rbValue === 0) rbValue = S.rbSecs;   // forced in either mode
+    const showRb = isDisable && (S.rbMode === 'auto' || remoteDep);
     const warns = [...baseWarns];
     const extra = [];
     if (impact) {
@@ -401,9 +409,11 @@ function openConfirm(d, action) {
 
     let body = '';
     if (isDisable) {
-      body += `<div class="rb-pick"><label>${esc(t('rbLabel'))}: <select id="rb">${RB_OPTIONS.filter(v => v || !remoteDep).map(v =>
-        `<option value="${v}"${v === rbValue ? ' selected' : ''}>${esc(v ? t('rbOpt', v) : t('rbOff'))}</option>`).join('')}</select></label>
-        <div class="sub">${esc(t('rbHint'))}</div>${remoteDep ? `<div class="rb-need">${esc(t('rbRequired'))}</div>` : ''}</div>`;
+      body += showRb
+        ? `<div class="rb-pick"><label>${esc(t('rbLabel'))}: <select id="rb">${RB_OPTIONS.map(v =>
+            `<option value="${v}"${v === rbValue ? ' selected' : ''}>${esc(t('rbOpt', v))}</option>`).join('')}</select></label>
+            <div class="sub">${esc(t('rbHint'))}</div>${remoteDep ? `<div class="rb-need">${esc(t('rbRequired'))}</div>` : ''}</div>`
+        : `<div class="rb-pick direct"><div class="sub">${esc(t('modeInDialog', 'direct'))}</div></div>`;
       body += warns.length
         ? `<ul class="warns">${warns.map(w => `<li class="${w.crit ? 'crit' : ''}">${esc(reasonText(w.r))}</li>`).join('')}${extra.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`
         : (loading ? '' : `<p>${esc(t('noWarns'))}</p>`);
@@ -434,11 +444,11 @@ function openConfirm(d, action) {
       if (allowed && remoteDep && rbValue < 15) allowed = false;
       ok.disabled = !allowed;
     };
-    $('#rb')?.addEventListener('change', e => { rbValue = +e.target.value; update(); });
+    $('#rb')?.addEventListener('change', e => { rbValue = +e.target.value; S.rbSecs = rbValue; store.set('rbSecs', String(rbValue)); update(); });
     $('#typed')?.addEventListener('input', update);
     $('#ack')?.addEventListener('change', update);
     $('#mCancel').onclick = closeModal;
-    ok.onclick = () => doAction(d, action, strong, my, isDisable ? rbValue : 0);
+    ok.onclick = () => doAction(d, action, strong, my, isDisable && showRb ? rbValue : 0);
     update();
     ($('#typed') || $('#mCancel')).focus();
   };
@@ -508,4 +518,26 @@ function hideSheet() {
   $('#sheet').classList.remove('on');
   document.body.classList.remove('sheet-open');
   $('#sheet').setAttribute('aria-hidden', 'true');
+}
+
+// ------------------------------------------------------------------ disable mode dialog
+
+function openModeDialog() {
+  const m = $('#modal');
+  ++modalToken;
+  const card = (mode, nameKey, textKey) => `<label class="mode-card${S.rbMode === mode ? ' on' : ''}">
+      <input type="radio" name="mode" value="${mode}"${S.rbMode === mode ? ' checked' : ''}>
+      <span class="mc-body"><b>${esc(t(nameKey))}${S.rbMode === mode ? ` <span class="badge st-ok">${esc(t('modeNow'))}</span>` : ''}</b>
+      <span class="mc-text">${esc(t(textKey))}</span></span></label>`;
+  m.innerHTML = `<h2>${esc(t('modeTitle'))}</h2>
+    <div class="mode-cards">${card('auto', 'modeAutoName', 'modeAutoText')}${card('direct', 'modeDirectName', 'modeDirectText')}</div>
+    <p class="sub">${esc(t('modeRemoteNote'))}</p>
+    <div class="actions"><button class="btn primary" id="modeClose">${esc(t('modeClose'))}</button></div>`;
+  m.querySelectorAll('input[name=mode]').forEach(r => r.addEventListener('change', e => {
+    S.rbMode = e.target.value; store.set('rbMode', S.rbMode);
+    applyStatic(); openModeDialog();
+  }));
+  $('#modeClose').onclick = closeModal;
+  $('#modalBg').classList.add('on');
+  $('#modeClose').focus();
 }

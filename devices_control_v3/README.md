@@ -12,6 +12,7 @@ Full documentation and screenshots: see the [repository README](../README.md).
 
 ## What is new in v3
 - **Auto-revert.** A disable can be armed with a timer (30 s to 15 min in the UI). A one-time Task Scheduler job runs `%ProgramData%\devices_control\rollback.ps1` as SYSTEM and enables the device again unless you pressed *Keep disabled* in time.
+- **Disable mode switch** (top bar): *with auto-revert* (default; every disable arms a timer, 30 s to 15 min) or *no auto-revert* (the device stays off until you enable it). The dialog explains both and the choice is remembered. A device that carries your remote session is always disabled with auto-revert.
 - **Remote sessions are detected** (SSH, RDP, WinRM, VNC through established connections on their ports; remote-access tools by process name). The adapter carrying the session and every device above it in the tree need auto-revert; the server enforces it.
 - **Touch mode**: tap instead of hover, with a bottom sheet.
 - **`-RememberToken`**: keeps token and port in `%ProgramData%\devices_control` so a bookmarked link keeps working.

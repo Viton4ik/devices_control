@@ -100,6 +100,17 @@ const I18N = {
     e_rollbackUnavailable: 'Не удалось подготовить автооткат, устройство НЕ отключено: ',
     e_taskNotRemoved: 'Не удалось отменить задание автоотката, устройство включится само.',
     e_badJob: 'Задание автоотката не найдено.',
+    // v3: disable mode
+    modeAuto: 'Автооткат: вкл', modeDirect: 'Без автоотката', modeBtnTip: 'Режим отключения устройств: нажмите, чтобы прочитать и сменить',
+    modeTitle: 'Режим отключения',
+    modeAutoName: 'С автооткатом (рекомендуется)',
+    modeAutoText: 'Перед каждым отключением ставится таймер. Если вы не нажмёте «Оставить выключенным» в жёлтой полосе, Windows сама включит устройство обратно. Защищает от потери клавиатуры, мыши, сети и удалённого доступа. Минус: устройство не останется выключенным, если вы не подтвердите.',
+    modeDirectName: 'Без автоотката',
+    modeDirectText: 'Устройство отключается сразу и остаётся выключенным, пока вы сами его не включите. Подходит, когда вы сидите за ПК и хотите выключить что-то надолго (например, камеру). Риск: если отключили не то, вернуть можно только вручную.',
+    modeRemoteNote: 'Исключение для обоих режимов: если устройство держит ваше удалённое соединение или стоит над ним, автооткат включается принудительно.',
+    modeNow: 'Сейчас', modeClose: 'Закрыть',
+    modeInDialog: m => m === 'auto' ? 'Режим: с автооткатом' : 'Режим: без автоотката (сменить можно в верхней панели)',
+
   },
   en: {
     title: 'PC Devices', refresh: 'Refresh', stop: 'Stop server', loading: 'Loading device list…',
@@ -197,6 +208,17 @@ const I18N = {
     e_rollbackUnavailable: 'Could not prepare auto-revert, the device was NOT disabled: ',
     e_taskNotRemoved: 'Could not cancel the auto-revert job, the device will be enabled by itself.',
     e_badJob: 'Auto-revert job not found.',
+    // v3: disable mode
+    modeAuto: 'Auto-revert: on', modeDirect: 'No auto-revert', modeBtnTip: 'Disable mode: click to read about it and change it',
+    modeTitle: 'Disable mode',
+    modeAutoName: 'With auto-revert (recommended)',
+    modeAutoText: 'Every disable arms a timer. Unless you press "Keep disabled" in the yellow bar, Windows enables the device again by itself. Protects you from losing keyboard, mouse, network and remote access. Downside: the device does not stay off unless you confirm.',
+    modeDirectName: 'No auto-revert',
+    modeDirectText: 'The device is disabled right away and stays off until you enable it yourself. Good when you sit at the PC and want something off for a long time (say, the camera). Risk: if you disabled the wrong thing, only a manual fix brings it back.',
+    modeRemoteNote: 'Exception for both modes: if the device carries your remote connection or sits above it, auto-revert is forced on.',
+    modeNow: 'Current', modeClose: 'Close',
+    modeInDialog: m => m === 'auto' ? 'Mode: with auto-revert' : 'Mode: no auto-revert (change it in the top bar)',
+
   }
 };
 
